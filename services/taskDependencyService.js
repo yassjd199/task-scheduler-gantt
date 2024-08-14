@@ -29,9 +29,10 @@ const deleteTaskDependencyService = async (taskId, dependsOnTaskId) => {
 const getTaskDependenciesService = async (taskId) => {
     const dependencies = await TaskDependency.findAll({
         where: {taskId},
-        attributes: ['dependsOnTaskId'], // Only return the dependsOnTaskId
+        //attributes: ['dependsO    nTaskId'], // Only return the dependsOnTaskId
     });
-    return dependencies.map(dep => dep.dependsOnTaskId); // Extract the IDs
+    return dependencies;
+    //return dependencies.map(dep => dep.dependsOnTaskId); // Extract the IDs
 };
 
 module.exports = {

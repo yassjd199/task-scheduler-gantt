@@ -1,5 +1,7 @@
 // services/taskService.js
-const {Task} = require('../models');
+const {Task, TaskDependency} = require('../models');
+const {request} = require("express");
+
 
 const getAllTasksService = async () => {
     return await Task.findAll();
@@ -32,6 +34,24 @@ const deleteTaskService = async (Taskid) => {
         throw new Error('Task not found');
     }
 };
+const getTasksForProjectService = async (projectId) => {
+    try {
+        const tasks = await Task.findAll({
+            where: {projectId}
+        });
+        return tasks;
+    } catch (error) {
+        throw new Error(`Error fetching tasks for project ${projectId}: ${error.message}`);
+    }
+};
+
+async function getDependedTasksService(taskId) {
+    return await TaskDependency.findAll({
+        where: {dependsOnTaskId: taskId},
+        //attributes: ['taskId']
+    });
+}
+
 
 module.exports = {
     getAllTasksService,
@@ -39,4 +59,6 @@ module.exports = {
     deleteTaskService,
     updateTaskService,
     createTaskService,
+    getTasksForProjectService,
+    getDependedTasksService,
 };

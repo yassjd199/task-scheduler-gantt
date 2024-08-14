@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tasks</title>
+    <style>
+        /* Basic styling (unchanged) */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 4px;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #addTaskBtn {
+            float: right;
+            margin-bottom: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+    <script>
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        async function fetchTasks(projectId) {
+            try {
+                const response = await fetch(`/api/v1/tasksforproject/${projectId}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const tasks = await response.json();
+                displayTasks(tasks);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+            }
+        }
+
+        function displayTasks(tasks) {
+            const tableBody = document.getElementById('tasksTableBody');
+            tableBody.innerHTML = ''; // Clear any existing rows
+
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${task.id}</td>
+                    <td>${task.name}</td>
+                    <td>${task.description}</td>
+                    <td>${task.startDate}</td>
+                    <td>${task.endDate}</td>
+                    <td>${task.duration}</td>
+                    <td>${task.progress}%</td>
+                    <td>${task.isCritical ? 'Yes' : 'No'}</td>
+                    <td>${task.isMilestone ? 'Yes' : 'No'}</td>
+                    <td>
+                        <button onclick="editTask(${task.id})">Edit</button>
+                        <button onclick="deleteTask(${task.id})">Delete</button>
+                        <button onclick="openAddDependencyModal(${task.id})">Add Dependency</button>
+                        <button onclick="viewDependencies(${task.id})">View Dependencies</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function addTask(event) {
+            event.preventDefault(); // Prevent form from submitting the traditional way
+
+            const formData = new FormData(event.target);
+            const taskData = Object.fromEntries(formData.entries());
+
+            try {
+                await fetch('/api/v1/tasks', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(taskData)
+                });
+                fetchTasks(getQueryParam('projectId')); // Refresh the tasks list
+                document.getElementById('addTaskForm').reset(); // Reset the form
+                document.getElementById('addTaskModal').style.display = 'none'; // Hide the modal
+            } catch (error) {
+                console.error('Error adding task:', error);
+            }
+        }
+
+        async function addDependency(event) {
+            event.preventDefault(); // Prevent form from submitting the traditional way
+
+            const formData = new FormData(event.target);
+            const dependencyData = Object.fromEntries(formData.entries());
+
+            try {
+                await fetch('/api/v1/taskdependency', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(dependencyData)
+                });
+                fetchTasks(getQueryParam('projectId')); // Refresh the tasks list
+                document.getElementById('addDependencyForm').reset(); // Reset the form
+                document.getElementById('addDependencyModal').style.display = 'none'; // Hide the modal
+            } catch (error) {
+                console.error('Error adding dependency:', error);
+            }
+        }
+
+        async function viewDependencies(taskId) {
+            try {
+                const response = await fetch(`/api/v1/taskdependency/${taskId}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const dependencies = await response.json();
+                displayDependencies(taskId, dependencies);
+            } catch (error) {
+                console.error('Error fetching dependencies:', error);
+            }
+        }
+
+        function displayDependencies(taskId, dependencies) {
+            const dependenciesList = document.getElementById('dependenciesList');
+            dependenciesList.innerHTML = `<h3>Dependencies for Task ${taskId}</h3>`;
+            if (dependencies.length === 0) {
+                dependenciesList.innerHTML += '<p>No dependencies found.</p>';
+            } else {
+                const list = document.createElement('ul');
+                dependencies.forEach(depId => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Task ${depId}`;
+                    list.appendChild(listItem);
+                });
+                dependenciesList.appendChild(list);
+            }
+            document.getElementById('dependenciesListModal').style.display = 'block'; // Show the modal
+        }
+
+        function openAddTaskModal() {
+            const projectId = getQueryParam('projectId');
+            if (projectId) {
+                document.getElementById('projectIdInput').value = projectId; // Set the projectId in the form
+                document.getElementById('addTaskModal').style.display = 'block';
+            } else {
+                console.error('No project ID provided');
+            }
+        }
+
+        function openAddDependencyModal(taskId) {
+            document.getElementById('dependencyTaskId').value = taskId; // Set the taskId in the form
+            document.getElementById('addDependencyModal').style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const projectId = getQueryParam('projectId');
+            if (projectId) {
+                fetchTasks(projectId);
+                document.getElementById('projectIdInput').value = projectId; // Set the projectId in the form
+            } else {
+                console.error('No project ID provided');
+            }
+        });
+    </script>
+</head>
+<body>
+<h1>Tasks for Project</h1>
+<button onclick="openAddTaskModal()">+ Add New Task</button>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Duration</th>
+        <th>Progress</th>
+        <th>Critical</th>
+        <th>Milestone</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="tasksTableBody">
+    <!-- Tasks will be dynamically inserted here -->
+    </tbody>
+</table>
+
+<!-- Add Task Modal -->
+<div id="addTaskModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('addTaskModal').style.display = 'none'">&times;</span>
+        <h2>Add New Task</h2>
+        <form id="addTaskForm" onsubmit="addTask(event)">
+            <input type="hidden" id="projectIdInput" name="projectId" required/>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required/>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required></textarea>
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" name="startDate" required/>
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate" name="endDate" required/>
+            <label for="duration">Duration:</label>
+            <input type="number" id="duration" name="duration" required/>
+            <label for="progress">Progress (%):</label>
+            <input type="number" id="progress" name="progress" required/>
+            <label for="isCritical">Critical:</label>
+            <input type="checkbox" id="isCritical" name="isCritical"/>
+            <label for="isMilestone">Milestone:</label>
+            <input type="checkbox" id="isMilestone" name="isMilestone"/>
+            <button type="submit">Add Task</button>
+        </form>
+    </div>
+</div>
+
+<!-- Add Dependency Modal -->
+<div id="addDependencyModal" class="modal">
+    <div class="modal-content">
+        <span class="close"
+              onclick="document.getElementById('addDependencyModal').style.display = 'none'">&times;</span>
+        <h2>Add Task Dependency</h2>
+        <form id="addDependencyForm" onsubmit="addDependency(event)">
+            <input type="hidden" id="dependencyTaskId" name="taskId" required/>
+            <label for="dependsOnTaskId">Depends On Task ID:</label>
+            <input type="number" id="dependsOnTaskId" name="dependsOnTaskId" required/>
+            <button type="submit">Add Dependency</button>
+        </form>
+    </div>
+</div>
+
+<!-- Dependencies List Modal -->
+<div id="dependenciesListModal" class="modal">
+    <div class="modal-content">
+        <span class="close"
+              onclick="document.getElementById('dependenciesListModal').style.display = 'none'">&times;</span>
+        <div id="dependenciesList">
+            <!-- Dependencies will be dynamically inserted here -->
+        </div>
+    </div>
+</div>
+</body>
+</html>

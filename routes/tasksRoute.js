@@ -5,12 +5,17 @@ const {
     getTaskController,
     createTaskController,
     updateTaskController,
-    deleteTaskController
+    deleteTaskController,
+    getTasksForProjectController,
+    getDependedTasksController,
 } = require('../controllers/taskControllers');
 const {mountpath} = require("express/lib/application");
 
 
-router.get('/tasks', getTasksController).post('/tasks', createTaskController);
+router.get('/tasks', getTasksController);
+router.post('/tasks', createTaskController);
+router.get('/tasksforproject/:projectId', getTasksForProjectController);
+router.get('/dependents/:taskId', getDependedTasksController);
 router.get('/tasks/:taskId', getTaskController);
 router.put('/tasks/:taskId', updateTaskController);
 router.delete('/tasks/:taskId', deleteTaskController);

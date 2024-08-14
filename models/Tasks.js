@@ -1,7 +1,8 @@
 const {DataTypes, Model} = require('sequelize');
-const db=require('../config/database');
+const db = require('../config/database');
 
-class Tasks extends Model {}
+class Tasks extends Model {
+}
 
 Tasks.init(
     {
@@ -39,7 +40,15 @@ Tasks.init(
             type: DataTypes.DATE,
             allowNull: true,
         },
+        earlyEnd: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
         lateStart: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        lateEnd: {
             type: DataTypes.DATE,
             allowNull: true,
         },
@@ -52,4 +61,3 @@ Tasks.init(
 );
 
 module.exports = Tasks;
-

@@ -5,7 +5,12 @@ const {
     createTaskService,
     updateTaskService,
     deleteTaskService,
+    getTasksForProjectService,
+    getDependedTasksService,
 } = require('../services/taskService');
+
+const {getSingleProjectService} = require("../services/projectService");
+const updateTaskDates = require('../services/scheduleService');
 
 const getTasksController = async (req, res) => {
     try {
@@ -56,11 +61,50 @@ const deleteTaskController = async (req, res) => {
         res.status(404).json({message: error.message});
     }
 };
+const getTasksForProjectController = async (req, res) => {
+    const {projectId} = req.params; // Retrieve projectId from request parameters
+
+    try {
+        const project = await getSingleProjectService(projectId);
+        const projectStartTime = project.startDate;
+        //console.debug(projectStartTime);
+
+        await updateTaskDates(projectId, projectStartTime);
+
+        // Fetch the tasks for the project
+        const tasks = await getTasksForProjectService(projectId);
+        res.json(tasks);
+    } catch (error) {
+        res.status(500).json({message: error.message});
+        console.error(error.message);
+    }
+};
+
+
+const getDependedTasksController = async (req, res) => {
+    try {
+        const {taskId} = req.params;
+
+        if (!taskId) {
+            return res.status(400).json({error: 'Task ID is required'});
+        }
+
+        // Fetch the dependent tasks
+        const dependencies = await getDependedTasksService(taskId);
+
+        res.status(200).json(dependencies);
+    } catch (error) {
+        console.error('Error fetching depended tasks:', error);
+        res.status(500).json({error: 'An error occurred while fetching depended tasks'});
+    }
+}
 
 module.exports = {
     getTasksController,
     getTaskController,
     createTaskController,
     updateTaskController,
-    deleteTaskController
+    deleteTaskController,
+    getTasksForProjectController,
+    getDependedTasksController,
 };

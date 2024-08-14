@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Projects</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 4px;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #addProjectBtn {
+            float: right;
+            margin-bottom: 20px;
+        }
+
+        #projectModal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            padding-top: 100px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        #modalContent {
+            background-color: #fff;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+    <script>
+        async function fetchProjects() {
+            try {
+                const response = await fetch('/api/v1/projects');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const projects = await response.json();
+                displayProjects(projects);
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+            }
+        }
+
+        function displayProjects(projects) {
+            const tableBody = document.getElementById('projectsTableBody');
+            tableBody.innerHTML = ''; // Clear any existing rows
+
+            projects.forEach(project => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${project.id}</td>
+                    <td>${project.name}</td>
+                    <td>${project.description}</td>
+                    <td>${project.startDate}</td>
+                    <td>
+                        <button onclick="editProject(${project.id})">Edit</button>
+                        <button onclick="deleteProject(${project.id})">Delete</button>
+                        <button onclick="viewTasks(${project.id})">View Tasks</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function deleteProject(id) {
+            try {
+                await fetch(`/api/v1/projects/${id}`, {method: 'DELETE'});
+                fetchProjects(); // Refresh the project list
+            } catch (error) {
+                console.error('Error deleting project:', error);
+            }
+        }
+
+        function openModal() {
+            document.getElementById('projectModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('projectModal').style.display = 'none';
+        }
+
+        async function createProject() {
+            const name = document.getElementById('projectName').value;
+            const description = document.getElementById('projectDescription').value;
+            const startDate = document.getElementById('projectStartDate').value;
+
+            if (name && startDate) {
+                try {
+                    await fetch('/api/v1/projects', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({name, description, startDate})
+                    });
+                    closeModal();
+                    fetchProjects();
+                } catch (error) {
+                    console.error('Error creating project:', error);
+                }
+            }
+        }
+
+        function viewTasks(projectId) {
+            window.location.href = `/tasks.html?projectId=${projectId}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProjects();
+        });
+    </script>
+</head>
+<body>
+<h1>Projects</h1>
+<button id="addProjectBtn" onclick="openModal()">+ Add Project</button>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Start Date</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="projectsTableBody">
+    <!-- Projects will be dynamically inserted here -->
+    </tbody>
+</table>
+
+<!-- The Modal for Adding a New Project -->
+<div id="projectModal">
+    <div id="modalContent">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Add New Project</h2>
+        <label for="projectName">Project Name:</label>
+        <input type="text" id="projectName" name="projectName" required>
+        <label for="projectDescription">Project Description:</label>
+        <input type="text" id="projectDescription" name="projectDescription">
+        <label for="projectStartDate">Start Date:</label>
+        <input type="date" id="projectStartDate" name="projectStartDate" required>
+        <button onclick="createProject()">Create Project</button>
+    </div>
+</div>
+
+</body>
+</html>
