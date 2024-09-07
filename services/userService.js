@@ -53,7 +53,7 @@ updateUserService = async (userId, data)=> {
 }
 
 // Delete a user by ID
- deleteUserService = async (userId) {
+ deleteUserService = async (userId) =>{
     try {
         const user = await User.findByPk(userId);
         if (!user) {

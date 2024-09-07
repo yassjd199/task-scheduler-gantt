@@ -7,9 +7,9 @@ const {
   deleteUserController,
   getAllUsersController,
   updateUserController,
-} = require('./controllers/userControllers');
+} = require('../controllers/userController.js');
 
-router.get('/users', getUserByIdController);
+router.get('/users', getAllUsersController);
 router.get('/users/:UserId', getUserByIdController);
 router.post('/users', createUserController);
 router.put('/users/:UserId', updateUserController);
