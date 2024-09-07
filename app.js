@@ -6,7 +6,7 @@ const logger = require('morgan');
 const projectRouter = require('./routes/projectsRoute');
 const taskRouter = require('./routes/tasksRoute');
 const taskDependencyRouter = require('./routes/taskDependenciesRoute');
-
+const userRouter = require("./routes/usersRoute");
 // Port configuration
 const PORT = process.env.PORT || 3000;
 

@@ -1,0 +1,18 @@
+1. User Endpoints
+GET /api/v1/users
+GET /api/v1/users/:userId
+POST /api/v1/users
+PUT /api/v1/users/:userId
+DELETE /api/v1/users/:userId
+2. Project Endpoints
+GET /api/v1/projects?userId=:userId
+GET /api/v1/projects/:projectId
+POST /api/v1/projects (Include userId in the request body)
+PUT /api/v1/projects/:projectId
+DELETE /api/v1/projects/:projectId
+3. Task Endpoints
+GET /api/v1/tasks?projectId=:projectId
+GET /api/v1/tasks/:taskId
+POST /api/v1/tasks (Include projectId in the request body)
+PUT /api/v1/tasks/:taskId
+DELETE /api/v1/tasks/:taskId
